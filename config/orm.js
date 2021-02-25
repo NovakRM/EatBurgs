@@ -2,50 +2,75 @@ const connection = require('./connection')
 //ORM will be the part of our app talking to the DB
 //ORM means object relational mapping
 
+const printQuestionMarks = (num) => {
+    let arr = [];
+    for (let i = 0; i < num; i++) {
+      arr.push('?')
+    }
+    return arr.toString()
+}
+  
+// Helper function to convert object key/value pairs to SQL syntax
+const objToSql = (ob) => {
+let arr = []
 
-// All
-const selectAll = {
-    selectAll: function (err, res){
-        let query = 'SELECT * FROM burgers'
-        connection.query(query, function (err, res){
-            if (err) throw err
-        })
-        res(result)
+// Loop through the keys and push the key/value as a string int arr
+for (const key in ob) {
+    let value = ob[key]
+    // Check to skip hidden properties
+    if (Object.hasOwnProperty.call(ob, key)) {
+    // If string with spaces, add quotations (Lana Del Grey => 'Lana Del Grey')
+    if (typeof value === 'string' && value.indexOf(' ') >= 0) {
+        value = `'${value}'`
+    }
+    // e.g. {name: 'Lana Del Grey'} => ["name='Lana Del Grey'"]
+    arr.push(`${key}=${value}`)
     }
 }
-
-// Insert
-const insertOne = () => {
-connection.query(
-    'INSERT INTO burgers (burger) VALUES (?)',
-    [req.body.burger],
-    (err, result) => {
-        if (err) {
-        return res.status(500).end();
-        }
-
-        // Send back the ID of the new plan
-        console.log({ id: result.insertId });
-        res.json({ id: result.insertId });
-    })
+    // Translate array of strings to a single comma-separated string
+    return arr.toString()
 }
+
+// Begin ORM
+const orm = {
+    // All
+    // SELECT * FROM table
+    // takes two parameters: table, callback (for asynchronous functionality)
+    // MODEL query will be: all(cb){orm.all'burgers',(res)=>cb(res))}
+    all(tableInput, cb) {
+      const queryString = `SELECT * FROM ${tableInput};`
+      connection.query(queryString, (err, result) => {
+        if (err) {
+          throw err
+        }
+        cb(result)
+      })
+    },
+
+    // Insert
+    insert(table, cols, vals, cb) {
+      let queryString = `INSERT INTO ${table}`;
+     //INSERT (cols) INTO table WHERE VALUES (?)
+      queryString += ' (' //this is just really nasty looking concatting, relies on lines 14-31
+      queryString += cols.toString()
+      queryString += ') '
+      queryString += 'VALUES ('
+      queryString += printQuestionMarks(vals.length);
+      queryString += ') '
+     //MODEL query will be: insert(cols, vals, cb){orm.insert('burgers', cols, vals, (res)=>cb(res))}
+      console.log(queryString);
+  
+      connection.query(queryString, vals, (err, result) => {
+        if (err) {
+          throw err;
+        }
+  
+        cb(result);
+      });
+    },
+}
+
 
 // Update
-const updateOne = () => {
-    connection.query(
-        'UPDATE plans SET burger = ? WHERE id = ?', //id is important for figuring out what to edit
-        [req.body.burger, req.params.id],
-        (err, result) => {
-          if (err) {
-            // If an error occurred, send a generic server failure
-            return res.status(500).end();
-          }
-          if (result.changedRows === 0) {
-            // If no rows were changed, then the ID must not exist, so 404
-            return res.status(404).end();
-          }
-          res.status(200).end();
-        }
-    );
-}
+
 module.exports = orm
