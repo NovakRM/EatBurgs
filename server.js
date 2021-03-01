@@ -1,22 +1,23 @@
 const express = require("express")
-var exphbs = require("express-handlebars")
-var mysql = require("mysql")
+const mysql = require("mysql")
 
-var app = express()
+const app = express()
 
-var PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || 8080
 app.use(express.static("public"))
 
 // Parse application body as JSON
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
+const exphbs = require("express-handlebars")
+
 // Set Handlebars as the default templating engine.
 app.engine("handlebars", exphbs({ defaultLayout: "main" }))
 app.set("view engine", "handlebars");
 
 // Routes
-var routes = require("./controls/burgcontrols.js")
+const routes = require("./controls/burgcontrols.js")
 app.use(routes);
 
 
